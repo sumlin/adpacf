@@ -3,6 +3,7 @@ __author__ = 'nivs'
 from PyQt4 import QtCore, QtGui, uic
 from itertools import product
 from copy import copy
+from os.path import join
 
 def delTN(a):
     a = a.split('\n')
@@ -24,7 +25,7 @@ def addN(a):
 class MainWindow(QtGui.QWidget):
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        uic.loadUi("main.ui", self)
+        uic.loadUi(join('ui', 'main.ui'), self)
         self.var = [None, None, None, None, None]
         self.connect(self.butVar0, QtCore.SIGNAL("clicked()"), lambda : self.fVar(0))
         self.connect(self.butVar1, QtCore.SIGNAL("clicked()"), lambda : self.fVar(1))
@@ -42,7 +43,7 @@ class MainWindow(QtGui.QWidget):
 class WorkWindow(QtGui.QWidget):
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        uic.loadUi("work.ui", self)
+        uic.loadUi(join('ui', 'work.ui'), self)
         self.data = []
         self.cur = -1
         self.butPrev.setDisabled(True)
@@ -127,7 +128,7 @@ class Analiz(QtGui.QWidget):
                 if not flagHead:
                     self.data.append(j)
 
-        uic.loadUi("analiz.ui", self)
+        uic.loadUi(join('ui', 'analiz.ui'), self)
         self.ans = True
         self.ok = []
         self.start()
@@ -178,11 +179,12 @@ class Analiz(QtGui.QWidget):
 class FinishWind(QtGui.QWidget):
     def __init__(self, data, lenOldData, head):
         QtGui.QWidget.__init__(self)
-        uic.loadUi("finish.ui", self)
+        uic.loadUi(join('ui', 'finish.ui'), self)
         pr = ''
         self.data = [('11',), ('111',), ('1111',), ('11', '22'), ('11', '222'), ('111', '22'), ('111', '222'), ('1111', '22'), ('1111', '222'), ('11', '22', '33'), ('11', '22', '333'), ('11', '22', '3333'), ('11', '222', '33'), ('11', '222', '333'), ('11', '222', '3333'), ('111', '22', '33'), ('111', '22', '333'), ('111', '22', '3333'), ('111', '222', '33'), ('111', '222', '333'), ('111', '222', '3333'), ('1111', '22', '33'), ('1111', '22', '333'), ('1111', '22', '3333'), ('1111', '222', '33'), ('1111', '222', '333'), ('1111', '222', '3333')]
-        for i in self.  data:
-            pr += str(i) + '\n\n'
+
+
+
         self.textBrowser.setPlainText(str(pr))
 
 if __name__ == "__main__":
