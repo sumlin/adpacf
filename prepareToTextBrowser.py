@@ -1,8 +1,8 @@
 __author__ = 'nivs'
 from copy import deepcopy
 
-def prepareToTextBrowser(rawData, dictData, head):
 
+def prepareToTextBrowser(rawData, dictData, head):
     data = []
     for i in rawData:
         data.append(list(i))
@@ -12,7 +12,7 @@ def prepareToTextBrowser(rawData, dictData, head):
     err = []
     for i in range(len(data)):
         for j in range(len(data)):
-            if data[i][:len(data[j])] == data[j]  and data[i] != data[j]:
+            if data[i][:len(data[j])] == data[j] and data[i] != data[j]:
                 err.append(data[j])
 
     for i in err:
@@ -29,7 +29,7 @@ def prepareToTextBrowser(rawData, dictData, head):
         for j in range(mlen - len(i)):
             i.append('')
     data.sort()
-    #data, dictData, head
+
     final = ''
     head = unzip(dictTrust(rawData, dictData, head))
     for i in head[:-1]:
@@ -42,6 +42,7 @@ def prepareToTextBrowser(rawData, dictData, head):
             final += pr(data[i][raz(data[i], data[i - 1], mlen):], mlen)
     return final
 
+
 # Смотрим, какие признаки классификации остались
 def dictTrust(data, dictData, head):
     trust = []
@@ -51,12 +52,12 @@ def dictTrust(data, dictData, head):
                 trust.append(dictData[j])
     return trust
 
+
 # Возвращает уникальные значения (убирает повторы)
 def unzip(data):
     seen = set()
     seen_add = seen.add
     return [x for x in data if x not in seen and not seen_add(x)]
-
 
 
 # Меняет местами столбцы
@@ -84,9 +85,10 @@ def pr(str, _max):
     ink = _max - len(str)
     for i in range(len(str)):
         if not str[i] == '':
-            return  (i + ink) * 2 * '-' + str[i] + '\n'
+            return (i + ink) * 2 * ' ' + str[i] + '\n'
         else:
             break
+
 
 # Высчитывает, на каком элементе начинаются различия между двумя списками
 def raz(lst1, lst2, _max):
