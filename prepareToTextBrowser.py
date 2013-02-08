@@ -2,11 +2,10 @@ __author__ = 'nivs'
 from copy import deepcopy
 
 
-def prepareToTextBrowser(rawData, dictData, head):
+def prepareToTextBrowser(rawData, dictData, head, newHead):
     data = []
     for i in rawData:
         data.append(list(i))
-
     # Убирает из списка элементы, содержащиеся в других элементах.
     # К примеру, из t = [['1, 2', ['1, 2, 3']] удалит ['1', '2'].
     err = []
@@ -24,32 +23,44 @@ def prepareToTextBrowser(rawData, dictData, head):
     # Ищет максимальную длину подсписка
     mlen = max(*[len(x) for x in data])
 
-    # Добавляет к коротким спискам недостающие ['']. Сделано для того, чтобы .sort() работал так, как надо.
+    # Добавляет к коротким спискам недостающие [''].
+    # Сделано для того, чтобы .sort() работал так, как надо.
     for i in data:
         for j in range(mlen - len(i)):
             i.append('')
     data.sort()
 
-    final = ''
     head = unzip(dictTrust(rawData, dictData, head))
+    newHead = unzip(dictTrust(rawData, dictData, newHead))
+
+    for i in range(len(head)):
+        if head[i] != newHead[i]:
+            n = head.index(newHead[i])
+            print(i, n)
+            head[i], head[n] = head[n], head[i]
+            data = swap(data, i, n)
+
+    final = ''
     for i in head[:-1]:
         final += str(i) + ' - '
     final += head[-1] + '\n\n'
     for i in range(len(data)):
-        if i == 0:
-            final += pr(data[i], mlen)
-        else:
-            final += pr(data[i][raz(data[i], data[i - 1], mlen):], mlen)
+        if data[i] != '':
+            if i == 0:
+                final += pr(data[i], mlen)
+            else:
+                final += pr(data[i][raz(data[i], data[i - 1], mlen):], mlen)
     return final
 
 
 # Смотрим, какие признаки классификации остались
 def dictTrust(data, dictData, head):
     trust = []
-    for i in data:
-        for j in i:
-            if dictData[j] in head:
-                trust.append(dictData[j])
+    for i in head:
+        for j in data:
+            for k in j:
+                if i == dictData[k]:
+                    trust.append(dictData[k])
     return trust
 
 
@@ -83,11 +94,13 @@ def swap(rawData, a, b):
 # Выводит на экран древовидную структуру
 def pr(str, _max):
     ink = _max - len(str)
+    ret = ''
     for i in range(len(str)):
         if not str[i] == '':
-            return (i + ink) * 2 * ' ' + str[i] + '\n'
+            ret += (i + ink) * 2 * ' ' + str[i] + '\n'
         else:
             break
+    return ret
 
 
 # Высчитывает, на каком элементе начинаются различия между двумя списками
