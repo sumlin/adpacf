@@ -6,6 +6,7 @@ def prepareToTextBrowser(rawData, dictData, head, newHead):
     data = []
     for i in rawData:
         data.append(list(i))
+
     # Убирает из списка элементы, содержащиеся в других элементах.
     # К примеру, из t = [['1, 2', ['1, 2, 3']] удалит ['1', '2'].
     err = []
@@ -36,7 +37,6 @@ def prepareToTextBrowser(rawData, dictData, head, newHead):
     for i in range(len(head)):
         if head[i] != newHead[i]:
             n = head.index(newHead[i])
-            print(i, n)
             head[i], head[n] = head[n], head[i]
             data = swap(data, i, n)
 
