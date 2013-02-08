@@ -46,7 +46,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Next &gt;</string>
+    <string>Next &gt;&gt;</string>
    </property>
   </widget>
   <widget class="QPushButton" name="butPrev">
@@ -59,7 +59,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>&lt; Prev</string>
+    <string>&lt;&lt; Prev</string>
    </property>
   </widget>
  </widget>
