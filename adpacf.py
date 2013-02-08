@@ -38,6 +38,7 @@ class MainWindow(QtGui.QWidget):
         self.ind = 0
         self.move(500, 60)
         self.show()
+
     def fVar(self, index):
         self.var[index] = WorkWindow()
         self.var[index].move(self.x(), self.y())
@@ -100,7 +101,7 @@ class WorkWindow(QtGui.QWidget):
             else:
                 self.label.setText(self.data[self.cur][0])
                 self.butPrev.setEnabled(True)
-                self.butNext.setText('Next >')
+                self.butNext.setText('Next >>')
             self.textWind.setFocus()
 
     def fNext(self):
@@ -115,7 +116,6 @@ class Analiz(QtGui.QWidget):
 #    Список вида [принзнак классификации, значения признака классификации]
     def __init__(self, data):
         QtGui.QWidget.__init__(self)
-#        data = [['1 класс', '11', '111', '1111'], ['2 класс', '22', '222'], ['3 класс', '33', '333', '3333']]
         self.lenParent = len(data)
         self.head = []
         for i in data:
@@ -165,8 +165,8 @@ class Analiz(QtGui.QWidget):
 
     def stop(self):  # Завершение цикла
         self.hide()
-        self.finish = FinishWind(self.data, self.dictData, self.head)
-        self.finish.show()
+        self.choice = ChoiceWind(self.data, self.dictData, self.head)
+        self.choice.show()
 
     def keyPressEvent(self, e):
         flag = False
@@ -183,24 +183,67 @@ class Analiz(QtGui.QWidget):
                 self.stop()  # Циклы закончились, завершение заданий на этом виджете
 
 
+class ChoiceWind(QtGui.QWidget):
+    def __init__(self, data, dictData, head):
+        QtGui.QWidget.__init__(self)
+        uic.loadUi(join('ui', 'choice.ui'), self)
+        self.data = data
+        self.dictData = dictData
+        self.head = head
+        self.ln = len(self.head)
+        for i in self.head:
+            self.listWidget.addItem(i)
+        self.connect(self.upButton, QtCore.SIGNAL("clicked()"), self.fUp)
+        self.connect(self.downButton, QtCore.SIGNAL("clicked()"), self.fDown)
+        self.printButton.clicked.connect(self.printData)
+        self.listWidget.setItemSelected(self.listWidget.item(0), True)
+        self.show()
+
+    def change(self, n, k):
+        self.listWidget.setItemSelected(self.listWidget.item(n), False)
+        self.listWidget.insertItem(n, self.listWidget.takeItem(k))
+        self.listWidget.setItemSelected(self.listWidget.item(k), True)
+
+    def fUp(self):
+        n = self.listWidget.currentRow()
+        if not n == 0:
+            self.change(n, n - 1)
+
+    def fDown(self):
+        n = self.listWidget.currentRow()
+        if not n == self.ln:
+            self.change(n, n + 1)
+
+    def getItems(self):
+        for i in range(self.listWidget.count()):
+            yield self.listWidget.item(i)
+
+    def printData(self):
+        self.newHead = []
+        for i in self.getItems():
+            self.newHead.append(i.text())
+        try:
+            self.finish.print(self.data, self.dictData, self.head, self.newHead)
+        except:
+            self.finish = FinishWind(self.data, self.dictData, self.head, self.newHead)
+            self.finish.show()
+
+
 class FinishWind(QtGui.QWidget):
 #   data - всевозможные сочетания всех элементов значений признаков классификаций
 #   dictData - словарь соответствия элементов data и head
 #   head - список признаков классификаций
-    def __init__(self, data, dictData, head):
+    def __init__(self, data, dictData, head, newHead):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'finish.ui'), self)
-#        self.data = [('11',), ('111',), ('1111',), ('11', '22'), ('11', '222'), ('111', '22'), ('111', '222'), ('1111', '22'), ('1111', '222'), ('11', '22', '33'), ('11', '22', '333'), ('11', '22', '3333'), ('11', '222', '33'), ('11', '222', '333'), ('11', '222', '3333'), ('111', '22', '33'), ('111', '22', '333'), ('111', '22', '3333'), ('111', '222', '33'), ('111', '222', '333'), ('111', '222', '3333'), ('1111', '22', '33'), ('1111', '22', '333'), ('1111', '22', '3333'), ('1111', '222', '33'), ('1111', '222', '333'), ('1111', '222', '3333')]
-        self.textBrowser.setPlainText(prepareToTextBrowser(data, dictData, head))
+        self.print(data, dictData, head, newHead)
 
-
+    def print(self, data, dictData, head, newHead):
+        self.textBrowser.setPlainText(prepareToTextBrowser(data, dictData, head, newHead))
 if __name__ == "__main__":
     import sys
 
-
     app = QtGui.QApplication(sys.argv)
     window = MainWindow()
-#    window = Analiz(1)
-#    window = FinishWind('r', 2, 3)
     window.show()
     sys.exit(app.exec_())
