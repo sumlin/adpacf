@@ -2,8 +2,9 @@
 __author__ = 'nivs'
 from PyQt4 import QtCore, QtGui, uic
 from itertools import product
-from os.path import join
+from os.path import join, exists
 from prepareToTextBrowser import prepareToTextBrowser
+import shelve
 
 
 def delTN(a):
@@ -30,34 +31,109 @@ class MainWindow(QtGui.QWidget):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'main.ui'), self)
         self.var = [None, None, None, None, None]
-        self.connect(self.butVar0, QtCore.SIGNAL("clicked()"), lambda: self.fVar(0))
+        self.nameFile = [None, None, None, None, None]
         self.connect(self.butVar1, QtCore.SIGNAL("clicked()"), lambda: self.fVar(1))
         self.connect(self.butVar2, QtCore.SIGNAL("clicked()"), lambda: self.fVar(2))
         self.connect(self.butVar3, QtCore.SIGNAL("clicked()"), lambda: self.fVar(3))
         self.connect(self.butVar4, QtCore.SIGNAL("clicked()"), lambda: self.fVar(4))
+        self.connect(self.butVar5, QtCore.SIGNAL("clicked()"), lambda: self.fVar(5))
         self.ind = 0
-        self.move(500, 60)
+        self.move(50, 60)
         self.show()
 
     def fVar(self, index):
-        self.var[index] = WorkWindow()
+        self.nameFile[index] = str(index) + "_data.db"
+        self.var[index] = SelectWind(self, index, self.nameFile[index])
         self.var[index].move(self.x(), self.y())
         self.var[index].show()
         self.hide()
 
 
-class WorkWindow(QtGui.QWidget):
-    def __init__(self):
+class SelectWind(QtGui.QWidget):
+    def __init__(self, parent, var, nameFile):
         QtGui.QWidget.__init__(self)
-        uic.loadUi(join('ui', 'work.ui'), self)
-        self.data = []
+        uic.loadUi(join('ui', 'select.ui'), self)
+        self.var = var
+        self.nameFile = nameFile
+        self.file = shelve.open(self.nameFile)
+        self.butVar.clicked.connect(self.fVar)
+        self.parent = parent
+        self.butInput.clicked.connect(self.fInput)
+        self.butAnaliz.clicked.connect(self.fAnaliz)
+        self.butOutput.clicked.connect(self.fOutput)
+        self.butDelete.clicked.connect(self.fDelete)
+        try:
+            if self.file['input']:
+                self.butAnaliz.setEnabled(True)
+                self.butDelete.setEnabled(True)
+        except KeyError:
+            self.butAnaliz.setEnabled(False)
+            self.butOutput.setEnabled(False)
+            self.butDelete.setEnabled(False)
+        try:
+            if self.file['analiz']:
+                self.butOutput.setEnabled(True)
+        except KeyError:
+            self.butOutput.setEnabled(False)
+
+    def fVar(self):
+        self.parent.show()
+        self.file.close()
+        self.close()
+
+    def fInput(self):
+        self.file.close()
+        self.input = InputWind(self, self.nameFile)
+        self.input.move(self.x(), self.y())
+        self.hide()
+        self.input.show()
+
+    def fAnaliz(self):
+        self.file.close()
+        self.analiz = AnalizWind(self, self.nameFile)
+        self.analiz.move(self.x(), self.y())
+        self.hide()
+        self.analiz.show()
+
+    def fOutput(self):
+        self.file.close()
+        self.output = OutputWind(self, self.nameFile)
+        self.output.move(self.x(), self.y())
+        self.hide()
+        self.output.show()
+
+    def fDelete(self):
+        self.input = DeleteWind(self, self.nameFile)
+        self.input.move(self.x(), self.y())
+        self.hide()
+        self.input.show()
+
+    def fBack(self):
+        self.file.close()
+        self.parent.show()
+        self.close()
+
+class InputWind(QtGui.QWidget):
+    def __init__(self, parent, nameFile):
+        QtGui.QWidget.__init__(self)
+        uic.loadUi(join('ui', 'input.ui'), self)
+        self.nameFile = nameFile
+        self.file = shelve.open(self.nameFile)
+        self.parent = parent
+        try:
+            self.newFile = False
+            self.data = self.file['input']
+        except KeyError:
+            self.newFile = True
+            self.data = []
         self.cur = -1
         self.butPrev.setDisabled(True)
         self.connect(self.butNext, QtCore.SIGNAL("clicked()"), self.fNext)
         self.connect(self.butPrev, QtCore.SIGNAL("clicked()"), self.fPrev)
+        self.butBack.clicked.connect(self.fBack)
         self.textWind.setFocus()
 
-    def fWork(self, side):
+    def fInput(self, side):
         buf = delTN(self.textWind.toPlainText())
         if self.cur == -1:
             for i in range(len(buf)):
@@ -74,8 +150,10 @@ class WorkWindow(QtGui.QWidget):
                 self.data[self.cur].append(i)
 
         if self.cur + 1 == len(self.data) and side == 'Next' and not len(self.data) == 0:
+            self.file['input'] = self.data
             self.hide()
-            self.analiz = Analiz(self.data)
+            self.analiz = AnalizWind(self, self.file)
+            self.analiz.move(self.x(), self.y())
             self.analiz.show()
         else:
             if side == 'Next':
@@ -105,37 +183,45 @@ class WorkWindow(QtGui.QWidget):
             self.textWind.setFocus()
 
     def fNext(self):
-        self.fWork('Next')
+        self.fInput('Next')
 
     def fPrev(self):
-        self.fWork('Prev')
+        self.fInput('Prev')
+
+    def fBack(self):
+        self.file.close()
+        self.parent.show()
+        self.close()
 
 
-class Analiz(QtGui.QWidget):
-#    data = [['1 класс', '11', '111', '1111'], ['2 класс', '22', '222'], ['3 класс', '33', '333', '3333']]
+class AnalizWind(QtGui.QWidget):
 #    Список вида [принзнак классификации, значения признака классификации]
-    def __init__(self, data):
+    def __init__(self, parent, nameFile):
         QtGui.QWidget.__init__(self)
-        self.lenParent = len(data)
+        uic.loadUi(join('ui', 'analiz.ui'), self)
+        self.nameFile = nameFile
+        self.file = shelve.open(self.nameFile)
+        self.parent = parent
+        self.butBack.clicked.connect(self.fBack)
+        _data = self.file['input']
+        self.lenParent = len(_data)
         self.head = []
-        for i in data:
+        for i in _data:
             self.head.append(i[0])
         self.dictData = {}
-        for i in data:
+        for i in _data:
             for j in i:
                 self.dictData[j] = i[0]
         self.data = []
         self.err = []
-        for i in range(1, len(data) + 1):
-            for j in product(*data[:i]):
+        for i in range(1, len(_data) + 1):
+            for j in product(*_data[:i]):
                 flagHead = False
                 for h in self.head:
                     if h in j:
                         flagHead = True
                 if not flagHead:
                     self.data.append(j)
-
-        uic.loadUi(join('ui', 'analiz.ui'), self)
         self.ans = True
         self.ok = []
         self.start()
@@ -165,8 +251,10 @@ class Analiz(QtGui.QWidget):
 
     def stop(self):  # Завершение цикла
         self.hide()
-        self.choice = ChoiceWind(self.data, self.dictData, self.head)
-        self.choice.show()
+        self.file['analiz'] = [self.data, self.dictData, self.head]
+        self.output = OutputWind(self, self.nameFile)
+        self.output.move(self.x(), self.y())
+        self.output.show()
 
     def keyPressEvent(self, e):
         flag = False
@@ -182,22 +270,30 @@ class Analiz(QtGui.QWidget):
             except StopIteration:
                 self.stop()  # Циклы закончились, завершение заданий на этом виджете
 
+    def fBack(self):
+        self.file.close()
+        self.parent.show()
+        self.close()
 
-class ChoiceWind(QtGui.QWidget):
-    def __init__(self, data, dictData, head):
+
+class OutputWind(QtGui.QWidget):
+    def __init__(self, parent, nameFile):
         QtGui.QWidget.__init__(self)
-        uic.loadUi(join('ui', 'choice.ui'), self)
-        self.data = data
-        self.dictData = dictData
-        self.head = head
+        uic.loadUi(join('ui', 'output.ui'), self)
+        self.nameFile = nameFile
+        self.file = shelve.open(self.nameFile)
+        self.parent = parent
+        self.data = self.file['analiz'][0]
+        self.dictData = self.file['analiz'][1]
+        self.head = self.file['analiz'][2]
         self.ln = len(self.head)
         for i in self.head:
             self.listWidget.addItem(i)
-        self.connect(self.upButton, QtCore.SIGNAL("clicked()"), self.fUp)
-        self.connect(self.downButton, QtCore.SIGNAL("clicked()"), self.fDown)
-        self.printButton.clicked.connect(self.printData)
+        self.connect(self.butUp, QtCore.SIGNAL("clicked()"), self.fUp)
+        self.connect(self.butDown, QtCore.SIGNAL("clicked()"), self.fDown)
+        self.butPrint.clicked.connect(self.printData)
+        self.butBack.clicked.connect(self.fBack)
         self.listWidget.setItemSelected(self.listWidget.item(0), True)
-        self.show()
 
     def change(self, n, k):
         self.listWidget.setItemSelected(self.listWidget.item(n), False)
@@ -225,21 +321,49 @@ class ChoiceWind(QtGui.QWidget):
         try:
             self.finish.print(self.data, self.dictData, self.head, self.newHead)
         except:
-            self.finish = FinishWind(self.data, self.dictData, self.head, self.newHead)
+            self.finish = PrintWind(self.data, self.dictData, self.head, self.newHead)
             self.finish.show()
 
+    def fBack(self):
+        self.file.close()
+        self.parent.show()
+        self.close()
 
-class FinishWind(QtGui.QWidget):
+
+class PrintWind(QtGui.QWidget):
 #   data - всевозможные сочетания всех элементов значений признаков классификаций
 #   dictData - словарь соответствия элементов data и head
 #   head - список признаков классификаций
     def __init__(self, data, dictData, head, newHead):
         QtGui.QWidget.__init__(self)
-        uic.loadUi(join('ui', 'finish.ui'), self)
+        uic.loadUi(join('ui', 'print.ui'), self)
         self.print(data, dictData, head, newHead)
 
     def print(self, data, dictData, head, newHead):
         self.textBrowser.setPlainText(prepareToTextBrowser(data, dictData, head, newHead))
+
+
+class DeleteWind(QtGui.QWidget):
+    def __init__(self, parent, nameFile):
+        QtGui.QWidget.__init__(self)
+        uic.loadUi(join('ui', 'delete.ui'), self)
+        self.nameFile = nameFile
+        self.file = shelve.open(self.nameFile)
+        self.parent = parent
+        self.butData.clicked.connect(self.fData)
+        self.butAnaliz.clicked.connect(self.fAnaliz)
+        self.butClose.clicked.connect(self.fClose)
+
+    def fData(self):
+        pass
+
+    def fAnaliz(self):
+        pass
+
+    def fClose(self):
+        pass
+
+
 if __name__ == "__main__":
     import sys
 
