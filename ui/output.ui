@@ -19,7 +19,7 @@
      <x>10</x>
      <y>50</y>
      <width>601</width>
-     <height>421</height>
+     <height>361</height>
     </rect>
    </property>
    <property name="font">
@@ -28,7 +28,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QPushButton" name="upButton">
+  <widget class="QPushButton" name="butUp">
    <property name="geometry">
     <rect>
      <x>635</x>
@@ -44,7 +44,7 @@
     <string>UP</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="downButton">
+  <widget class="QPushButton" name="butDown">
    <property name="geometry">
     <rect>
      <x>635</x>
@@ -73,7 +73,7 @@
     <string>Укажите приоритет признаков классификации при выводе на экран:</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="printButton">
+  <widget class="QPushButton" name="butPrint">
    <property name="geometry">
     <rect>
      <x>620</x>
@@ -84,6 +84,19 @@
    </property>
    <property name="text">
     <string>Print</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="butBack">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>430</y>
+     <width>99</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Назад</string>
    </property>
   </widget>
  </widget>

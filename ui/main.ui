@@ -25,7 +25,7 @@
   <property name="windowTitle">
    <string>ADPAFC</string>
   </property>
-  <widget class="QPushButton" name="butVar0">
+  <widget class="QPushButton" name="butVar1">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -38,7 +38,7 @@
     <string>Вариант 1</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="butVar1">
+  <widget class="QPushButton" name="butVar2">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -51,7 +51,7 @@
     <string>Вариант 2</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="butVar2">
+  <widget class="QPushButton" name="butVar3">
    <property name="geometry">
     <rect>
      <x>250</x>
@@ -64,7 +64,7 @@
     <string>Вариант 3</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="butVar3">
+  <widget class="QPushButton" name="butVar4">
    <property name="geometry">
     <rect>
      <x>370</x>
@@ -77,7 +77,7 @@
     <string>Вариант 4</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="butVar4">
+  <widget class="QPushButton" name="butVar5">
    <property name="geometry">
     <rect>
      <x>490</x>
