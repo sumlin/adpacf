@@ -38,7 +38,7 @@
     <string>Удалить анализ данных</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="butVar5">
+  <widget class="QPushButton" name="butClose">
    <property name="geometry">
     <rect>
      <x>490</x>
