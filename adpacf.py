@@ -3,6 +3,7 @@ __author__ = 'nivs'
 from PyQt4 import QtCore, QtGui, uic
 from itertools import product
 from os.path import join, exists
+from os import remove
 from prepareToTextBrowser import prepareToTextBrowser
 import shelve
 
@@ -39,10 +40,10 @@ class MainWindow(QtGui.QWidget):
         self.connect(self.butVar5, QtCore.SIGNAL("clicked()"), lambda: self.fVar(5))
         self.ind = 0
         self.move(50, 60)
-        self.show()
 
     def fVar(self, index):
-        self.nameFile[index] = str(index) + "_data.db"
+        index -= 1
+        self.nameFile[index] = str(index + 1) + "_data.db"
         self.var[index] = SelectWind(self, index, self.nameFile[index])
         self.var[index].move(self.x(), self.y())
         self.var[index].show()
@@ -62,42 +63,58 @@ class SelectWind(QtGui.QWidget):
         self.butAnaliz.clicked.connect(self.fAnaliz)
         self.butOutput.clicked.connect(self.fOutput)
         self.butDelete.clicked.connect(self.fDelete)
+        self.initial()
+
+    def showEvent(self, e):
+        self.initial()
+
+    def closeEvent(self, e):
         try:
-            if self.file['input']:
+            if self.file['input'][0] is not None:
+                self.file.close()
+            else:
+                self.file.close()
+                remove(self.nameFile)
+        except:
+            remove(self.nameFile)
+
+    def initial(self):
+        try:
+            if self.file['input'][0] is not None:
                 self.butAnaliz.setEnabled(True)
                 self.butDelete.setEnabled(True)
-        except KeyError:
+        except:
             self.butAnaliz.setEnabled(False)
             self.butOutput.setEnabled(False)
             self.butDelete.setEnabled(False)
         try:
-            if self.file['analiz']:
+            if self.file['analiz'][0] is not None:
                 self.butOutput.setEnabled(True)
-        except KeyError:
+
+        except:
             self.butOutput.setEnabled(False)
+
+
+
 
     def fVar(self):
         self.parent.show()
-        self.file.close()
         self.close()
 
     def fInput(self):
-        self.file.close()
-        self.input = InputWind(self, self.nameFile)
+        self.input = InputWind(self, self.file)
         self.input.move(self.x(), self.y())
         self.hide()
         self.input.show()
 
     def fAnaliz(self):
-        self.file.close()
-        self.analiz = AnalizWind(self, self.nameFile)
+        self.analiz = AnalizWind(self, self.file)
         self.analiz.move(self.x(), self.y())
         self.hide()
         self.analiz.show()
 
     def fOutput(self):
-        self.file.close()
-        self.output = OutputWind(self, self.nameFile)
+        self.output = OutputWind(self, self.file)
         self.output.move(self.x(), self.y())
         self.hide()
         self.output.show()
@@ -109,29 +126,39 @@ class SelectWind(QtGui.QWidget):
         self.input.show()
 
     def fBack(self):
-        self.file.close()
         self.parent.show()
         self.close()
 
 class InputWind(QtGui.QWidget):
-    def __init__(self, parent, nameFile):
+    def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'input.ui'), self)
-        self.nameFile = nameFile
-        self.file = shelve.open(self.nameFile)
+        self.file = file
         self.parent = parent
-        try:
-            self.newFile = False
-            self.data = self.file['input']
-        except KeyError:
-            self.newFile = True
-            self.data = []
-        self.cur = -1
+        self.initial()
         self.butPrev.setDisabled(True)
         self.connect(self.butNext, QtCore.SIGNAL("clicked()"), self.fNext)
         self.connect(self.butPrev, QtCore.SIGNAL("clicked()"), self.fPrev)
         self.butBack.clicked.connect(self.fBack)
         self.textWind.setFocus()
+
+
+    def showEvent(self, e):
+        self.initial()
+
+    def initial(self):
+        try:
+            if self.file['input'][0] is not None:
+                self.newFile = False
+                self.data = self.file['input']
+                self.cur = 0
+                self.textWind.setPlainText(addN(self.data[self.cur][1:]))
+                self.fInput('Prev')
+                self.butNext.setText('Next >>')
+        except:
+            self.newFile = True
+            self.data = []
+            self.cur = -1
 
     def fInput(self, side):
         buf = delTN(self.textWind.toPlainText())
@@ -189,18 +216,16 @@ class InputWind(QtGui.QWidget):
         self.fInput('Prev')
 
     def fBack(self):
-        self.file.close()
         self.parent.show()
         self.close()
 
 
 class AnalizWind(QtGui.QWidget):
 #    Список вида [принзнак классификации, значения признака классификации]
-    def __init__(self, parent, nameFile):
+    def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'analiz.ui'), self)
-        self.nameFile = nameFile
-        self.file = shelve.open(self.nameFile)
+        self.file = file
         self.parent = parent
         self.butBack.clicked.connect(self.fBack)
         _data = self.file['input']
@@ -252,7 +277,7 @@ class AnalizWind(QtGui.QWidget):
     def stop(self):  # Завершение цикла
         self.hide()
         self.file['analiz'] = [self.data, self.dictData, self.head]
-        self.output = OutputWind(self, self.nameFile)
+        self.output = OutputWind(self, self.file)
         self.output.move(self.x(), self.y())
         self.output.show()
 
@@ -271,17 +296,15 @@ class AnalizWind(QtGui.QWidget):
                 self.stop()  # Циклы закончились, завершение заданий на этом виджете
 
     def fBack(self):
-        self.file.close()
         self.parent.show()
         self.close()
 
 
 class OutputWind(QtGui.QWidget):
-    def __init__(self, parent, nameFile):
+    def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'output.ui'), self)
-        self.nameFile = nameFile
-        self.file = shelve.open(self.nameFile)
+        self.file = file
         self.parent = parent
         self.data = self.file['analiz'][0]
         self.dictData = self.file['analiz'][1]
@@ -325,7 +348,6 @@ class OutputWind(QtGui.QWidget):
             self.finish.show()
 
     def fBack(self):
-        self.file.close()
         self.parent.show()
         self.close()
 
@@ -348,20 +370,42 @@ class DeleteWind(QtGui.QWidget):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'delete.ui'), self)
         self.nameFile = nameFile
-        self.file = shelve.open(self.nameFile)
         self.parent = parent
         self.butData.clicked.connect(self.fData)
         self.butAnaliz.clicked.connect(self.fAnaliz)
         self.butClose.clicked.connect(self.fClose)
+        self.butData.setEnabled(True)
+        self.butAnaliz.setEnabled(False)
+        if exists(nameFile):
+            self.butData.setEnabled(True)
+            self.file = shelve.open(self.nameFile)
+            try:
+                if self.file['analiz']:
+                    self.butAnaliz.setEnabled(True)
+            except:
+                pass
+
 
     def fData(self):
-        pass
+        try:
+            self.file.close()
+        except:
+            pass
+        remove(self.nameFile)
+        self.fClose()
 
     def fAnaliz(self):
-        pass
+        del self.file['analiz']
+        self.butAnaliz.setEnabled(False)
+        self.parent.butOutput.setEnabled(False)
 
     def fClose(self):
-        pass
+        self.parent.show()
+        try:
+            self.file.close()
+        except:
+            pass
+        self.close()
 
 
 if __name__ == "__main__":
