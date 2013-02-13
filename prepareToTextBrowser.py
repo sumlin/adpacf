@@ -22,7 +22,11 @@ def prepareToTextBrowser(rawData, dictData, head, newHead):
             pass
 
     # Ищет максимальную длину подсписка
-    mlen = max(*[len(x) for x in data])
+    buf = [len(x) for x in data]
+    if len(buf) > 1:
+        mlen = max(*[len(x) for x in data])
+    else:
+        mlen = [len(x) for x in data][0]
 
     # Добавляет к коротким спискам недостающие [''].
     # Сделано для того, чтобы .sort() работал так, как надо.
