@@ -70,12 +70,13 @@ class SelectWind(QtGui.QWidget):
 
     def closeEvent(self, e):
         try:
-            if self.file['input'][0] is not None:
+            if self.file['input'] is not None:
                 self.file.close()
             else:
                 self.file.close()
                 remove(self.nameFile)
         except:
+            self.file.close()
             remove(self.nameFile)
 
     def initial(self):
@@ -93,9 +94,6 @@ class SelectWind(QtGui.QWidget):
 
         except:
             self.butOutput.setEnabled(False)
-
-
-
 
     def fVar(self):
         self.parent.show()
@@ -120,14 +118,15 @@ class SelectWind(QtGui.QWidget):
         self.output.show()
 
     def fDelete(self):
-        self.input = DeleteWind(self, self.nameFile)
-        self.input.move(self.x(), self.y())
+        self.delete = DeleteWind(self, self.file)
+        self.delete.move(self.x(), self.y())
         self.hide()
-        self.input.show()
+        self.delete.show()
 
     def fBack(self):
         self.parent.show()
         self.close()
+
 
 class InputWind(QtGui.QWidget):
     def __init__(self, parent, file):
@@ -141,7 +140,6 @@ class InputWind(QtGui.QWidget):
         self.connect(self.butPrev, QtCore.SIGNAL("clicked()"), self.fPrev)
         self.butBack.clicked.connect(self.fBack)
         self.textWind.setFocus()
-
 
     def showEvent(self, e):
         self.initial()
@@ -228,19 +226,21 @@ class AnalizWind(QtGui.QWidget):
         self.file = file
         self.parent = parent
         self.butBack.clicked.connect(self.fBack)
-        _data = self.file['input']
-        self.lenParent = len(_data)
+
+    def showEvent(self, e):
+        self.oldData = self.file['input']
+        self.lenParent = len(self.oldData)
         self.head = []
-        for i in _data:
+        for i in self.oldData:
             self.head.append(i[0])
         self.dictData = {}
-        for i in _data:
+        for i in self.oldData:
             for j in i:
                 self.dictData[j] = i[0]
         self.data = []
         self.err = []
-        for i in range(1, len(_data) + 1):
-            for j in product(*_data[:i]):
+        for i in range(1, len(self.oldData) + 1):
+            for j in product(*self.oldData[:i]):
                 flagHead = False
                 for h in self.head:
                     if h in j:
@@ -269,6 +269,8 @@ class AnalizWind(QtGui.QWidget):
                     self.ok.append(i)
                 else:
                     self.err.append(i)
+                if i == self.data[-1]:
+                    raise StopIteration
 
     def start(self):  # Начало обхода цикла
         self._generator = self.loopGenerator()  # Инициализация цикла
@@ -276,7 +278,7 @@ class AnalizWind(QtGui.QWidget):
 
     def stop(self):  # Завершение цикла
         self.hide()
-        self.file['analiz'] = [self.data, self.dictData, self.head]
+        self.file['analiz'] = [self.ok, self.dictData, self.unzip(self.dictTrust(self.ok, self.dictData, self.head))]
         self.output = OutputWind(self, self.file)
         self.output.move(self.x(), self.y())
         self.output.show()
@@ -298,6 +300,22 @@ class AnalizWind(QtGui.QWidget):
     def fBack(self):
         self.parent.show()
         self.close()
+
+    # Смотрим, какие признаки классификации остались
+    def dictTrust(self, data, dictData, head):
+        trust = []
+        for i in head:
+            for j in data:
+                for k in j:
+                    if i == dictData[k]:
+                        trust.append(dictData[k])
+        return trust
+
+    # Возвращает уникальные значения (убирает повторы)
+    def unzip(self, data):
+        seen = set()
+        seen_add = seen.add
+        return [x for x in data if x not in seen and not seen_add(x)]
 
 
 class OutputWind(QtGui.QWidget):
@@ -343,6 +361,7 @@ class OutputWind(QtGui.QWidget):
             self.newHead.append(i.text())
         try:
             self.finish.print(self.data, self.dictData, self.head, self.newHead)
+            self.finish.show()
         except:
             self.finish = PrintWind(self.data, self.dictData, self.head, self.newHead)
             self.finish.show()
@@ -366,32 +385,24 @@ class PrintWind(QtGui.QWidget):
 
 
 class DeleteWind(QtGui.QWidget):
-    def __init__(self, parent, nameFile):
+    def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'delete.ui'), self)
-        self.nameFile = nameFile
+        self.file = file
         self.parent = parent
         self.butData.clicked.connect(self.fData)
         self.butAnaliz.clicked.connect(self.fAnaliz)
         self.butClose.clicked.connect(self.fClose)
         self.butData.setEnabled(True)
         self.butAnaliz.setEnabled(False)
-        if exists(nameFile):
-            self.butData.setEnabled(True)
-            self.file = shelve.open(self.nameFile)
-            try:
-                if self.file['analiz']:
-                    self.butAnaliz.setEnabled(True)
-            except:
-                pass
-
-
-    def fData(self):
         try:
-            self.file.close()
+            if self.file['analiz'] is not None:
+                self.butAnaliz.setEnabled(True)
         except:
             pass
-        remove(self.nameFile)
+
+    def fData(self):
+        del self.file['input']
         self.fClose()
 
     def fAnaliz(self):
@@ -400,12 +411,8 @@ class DeleteWind(QtGui.QWidget):
         self.parent.butOutput.setEnabled(False)
 
     def fClose(self):
-        self.parent.show()
-        try:
-            self.file.close()
-        except:
-            pass
         self.close()
+        self.parent.show()
 
 
 if __name__ == "__main__":
