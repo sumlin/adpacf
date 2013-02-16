@@ -1,25 +1,35 @@
 # -*- coding: utf-8 -*-
-__author__ = 'nivs'
+'''
+Построение структур по курсу "Системный анализ в социальной сфере.
+
+Предоставляет возможность построения структуры предприятия
+с инвариацией подуровней.
+
+'''
+
+__author__ = 'sumlin'
+
 from PyQt4 import QtCore, QtGui, uic
 from itertools import product
-from os.path import join, exists
+from os.path import join
 from os import remove
-from prepareToTextBrowser import prepareToTextBrowser
 import shelve
 
+from prepareToTextBrowser import prepareToTextBrowser
 
+
+# Разбивает строку на список.
+# Необходима для корректного чтения из PlainTextEdit.
 def delTN(a):
     a = a.split('\n')
     b = []
     for i in a:
-        if i:
-            if i[-1] == '\t':
-                b.append(i[:-1])
-            else:
-                b.append(i)
+        b.append(i)
     return b
 
 
+# Собирает список в строку.
+# Необходима для корректной записи в PlainTextEdit.
 def addN(a):
     b = ''
     for i in a:
@@ -28,19 +38,35 @@ def addN(a):
 
 
 class MainWindow(QtGui.QWidget):
+    '''
+    Диалог начального окна. Отображает окно выбора вариантов.
+    '''
     def __init__(self):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'main.ui'), self)
         self.var = [None, None, None, None, None]
         self.nameFile = [None, None, None, None, None]
-        self.connect(self.butVar1, QtCore.SIGNAL("clicked()"), lambda: self.fVar(1))
-        self.connect(self.butVar2, QtCore.SIGNAL("clicked()"), lambda: self.fVar(2))
-        self.connect(self.butVar3, QtCore.SIGNAL("clicked()"), lambda: self.fVar(3))
-        self.connect(self.butVar4, QtCore.SIGNAL("clicked()"), lambda: self.fVar(4))
-        self.connect(self.butVar5, QtCore.SIGNAL("clicked()"), lambda: self.fVar(5))
+        self.connect(self.butVar1, QtCore.SIGNAL("clicked()"),
+                     lambda: self.fVar(1))
+        self.connect(self.butVar2, QtCore.SIGNAL("clicked()"),
+                     lambda: self.fVar(2))
+        self.connect(self.butVar3, QtCore.SIGNAL("clicked()"),
+                     lambda: self.fVar(3))
+        self.connect(self.butVar4, QtCore.SIGNAL("clicked()"),
+                     lambda: self.fVar(4))
+        self.connect(self.butVar5, QtCore.SIGNAL("clicked()"),
+                     lambda: self.fVar(5))
         self.ind = 0
         self.move(50, 60)
 
+        # Добавление горячих клавишь. 1...5 - вариант №1...5
+        for i in range(1, 6):
+            self.addAction(QtGui.QAction(self, shortcut=str(i),
+                                         triggered=lambda: self.fVar(i)))
+
+    # Создание проекта для работы с новым вариантом.
+    # Открытие окна меню.
+    # index - номер варианта.
     def fVar(self, index):
         index -= 1
         self.nameFile[index] = str(index + 1) + "_data.db"
@@ -51,35 +77,33 @@ class MainWindow(QtGui.QWidget):
 
 
 class SelectWind(QtGui.QWidget):
+    '''
+    Диалог меню проекта выбранного варианта.
+    '''
     def __init__(self, parent, var, nameFile):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'select.ui'), self)
-        self.var = var
         self.nameFile = nameFile
         self.file = shelve.open(self.nameFile)
-        self.butVar.clicked.connect(self.fVar)
         self.parent = parent
+        self.butVar.clicked.connect(self.fVar)
         self.butInput.clicked.connect(self.fInput)
         self.butAnaliz.clicked.connect(self.fAnaliz)
         self.butOutput.clicked.connect(self.fOutput)
         self.butDelete.clicked.connect(self.fDelete)
-        self.initial()
+        self.addAction(QtGui.QAction(self, shortcut=str(1),
+                                     triggered=self.fVar))
+        self.addAction(QtGui.QAction(self, shortcut=str(2),
+                                     triggered=self.fInput))
+        self.addAction(QtGui.QAction(self, shortcut=str(3),
+                                     triggered=self.fAnaliz))
+        self.addAction(QtGui.QAction(self, shortcut=str(4),
+                                     triggered=self.fOutput))
+        self.addAction(QtGui.QAction(self, shortcut=str(5),
+                                     triggered=self.fDelete))
 
+    # Проверка доступности кнопок.
     def showEvent(self, e):
-        self.initial()
-
-    def closeEvent(self, e):
-        try:
-            if self.file['input'] is not None:
-                self.file.close()
-            else:
-                self.file.close()
-                remove(self.nameFile)
-        except:
-            self.file.close()
-            remove(self.nameFile)
-
-    def initial(self):
         try:
             if self.file['input'][0] is not None:
                 self.butAnaliz.setEnabled(True)
@@ -95,70 +119,101 @@ class SelectWind(QtGui.QWidget):
         except:
             self.butOutput.setEnabled(False)
 
+    # Удаление файла БД, если он пуст.
+    def closeEvent(self, e):
+        try:
+            if self.file['input'] is not None:
+                self.file.close()
+            else:
+                self.file.close()
+                remove(self.nameFile)
+        except:
+            self.file.close()
+            remove(self.nameFile)
+
+    # 5 функций для перехода к другим этапам работы.
+    # Возможность активации того или иного этапа определяется
+    # в функции showEvent().
+
+    # Выбор вариантов. закрытие текущего проекта.
     def fVar(self):
         self.parent.show()
         self.close()
 
+    # Ввод признаков классификации и их значений.
     def fInput(self):
         self.input = InputWind(self, self.file)
         self.input.move(self.x(), self.y())
         self.hide()
         self.input.show()
 
+    # Анализ соответствия признаков классификации.
     def fAnaliz(self):
-        self.analiz = AnalizWind(self, self.file)
-        self.analiz.move(self.x(), self.y())
-        self.hide()
-        self.analiz.show()
+        if self.butAnaliz.isEnabled():
+            self.analiz = AnalizWind(self, self.file)
+            self.analiz.move(self.x(), self.y())
+            self.hide()
+            self.analiz.show()
 
+    # Вывод полученных данных
     def fOutput(self):
-        self.output = OutputWind(self, self.file)
-        self.output.move(self.x(), self.y())
-        self.hide()
-        self.output.show()
+        if self.butOutput.isEnabled():
+            self.output = OutputWind(self, self.file)
+            self.output.move(self.x(), self.y())
+            self.hide()
+            self.output.show()
 
+    # Удаление данных.
     def fDelete(self):
-        self.delete = DeleteWind(self, self.file)
-        self.delete.move(self.x(), self.y())
-        self.hide()
-        self.delete.show()
-
-    def fBack(self):
-        self.parent.show()
-        self.close()
+        if self.butDelete.isEnabled():
+            self.delete = DeleteWind(self, self.file)
+            self.delete.move(self.x(), self.y())
+            self.hide()
+            self.delete.show()
 
 
 class InputWind(QtGui.QWidget):
+    '''
+    Диалог ввода данных. Запись в файл происходит при нажатии кнопки "Finish".
+    self.file['input'] хранит в себе данные в виде:
+    [['1 класс', '11', '111', '1111'], ['2 класс', '22', '222', '2222']]
+    [i][0] содержит в себе признаки классификации, [i][1:] - их значения.
+    '''
     def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'input.ui'), self)
         self.file = file
         self.parent = parent
-        self.initial()
         self.butPrev.setDisabled(True)
-        self.connect(self.butNext, QtCore.SIGNAL("clicked()"), self.fNext)
-        self.connect(self.butPrev, QtCore.SIGNAL("clicked()"), self.fPrev)
+        self.butNext.clicked.connect(self.fNext)
+        self.butPrev.clicked.connect(self.fPrev)
         self.butBack.clicked.connect(self.fBack)
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Right",
+                                     triggered=self.fNext))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Left",
+                                     triggered=self.fPrev))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Backspace",
+                                     triggered=self.fBack))
         self.textWind.setFocus()
 
+    # Выставление начальных значений при появлении этого окна.
     def showEvent(self, e):
-        self.initial()
-
-    def initial(self):
         try:
+            # Проверка на наличие сохранённых данных.
             if self.file['input'][0] is not None:
-                self.newFile = False
+                # Восстановление данных.
                 self.data = self.file['input']
+                # Перемещение указателя в начальную позицию.
                 self.cur = 0
                 self.textWind.setPlainText(addN(self.data[self.cur][1:]))
                 self.fInput('Prev')
                 self.butNext.setText('Next >>')
         except:
-            self.newFile = True
             self.data = []
             self.cur = -1
 
     def fInput(self, side):
+        # Чтение из textBrowser.
         buf = delTN(self.textWind.toPlainText())
         if self.cur == -1:
             for i in range(len(buf)):
@@ -174,7 +229,9 @@ class InputWind(QtGui.QWidget):
             for i in buf:
                 self.data[self.cur].append(i)
 
-        if self.cur + 1 == len(self.data) and side == 'Next' and not len(self.data) == 0:
+        if self.cur + 1 == len(self.data) and side == 'Next' and \
+                not len(self.data) == 0:
+            # Завершение ввода данных, их сохранение и переход к другой части.
             self.file['input'] = self.data
             self.hide()
             self.analiz = AnalizWind(self, self.file)
@@ -207,26 +264,43 @@ class InputWind(QtGui.QWidget):
                 self.butNext.setText('Next >>')
             self.textWind.setFocus()
 
+    # Вызывается при нажатии кнопки 'Next >>' или 'Finish'.
     def fNext(self):
-        self.fInput('Next')
+        if self.butNext.isEnabled():
+            self.fInput('Next')
 
+    # Вызывается при нажатии кнопки '<< Prev'
     def fPrev(self):
-        self.fInput('Prev')
+        if self.butPrev.isEnabled():
+            self.fInput('Prev')
 
+    # Возвращение к окну, вызвавшему это окно.
     def fBack(self):
         self.parent.show()
         self.close()
 
 
 class AnalizWind(QtGui.QWidget):
-#    Список вида [принзнак классификации, значения признака классификации]
+    '''
+    Диалог анализа данных.
+    Запись проимходит при анализе последнего соотношения.
+    file['analiz'][0] = [всевозможные сочетания элементых разных признаков]
+    file['analiz'][1] = {значение признака классификации:признак классификации}
+    file['analiz'][2] = [признаки классификации, которые остались при
+                         анализе данных]
+    '''
     def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'analiz.ui'), self)
         self.file = file
         self.parent = parent
         self.butBack.clicked.connect(self.fBack)
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Backspace",
+                                     triggered=self.fBack))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Left",
+                                     triggered=self.fBack))
 
+    # Сброс на начало цикла при отображении окна.
     def showEvent(self, e):
         self.oldData = self.file['input']
         self.lenParent = len(self.oldData)
@@ -239,6 +313,7 @@ class AnalizWind(QtGui.QWidget):
                 self.dictData[j] = i[0]
         self.data = []
         self.err = []
+        # Создание всевозможных комбинаций значений признаков
         for i in range(1, len(self.oldData) + 1):
             for j in product(*self.oldData[:i]):
                 flagHead = False
@@ -278,24 +353,25 @@ class AnalizWind(QtGui.QWidget):
 
     def stop(self):  # Завершение цикла
         self.hide()
-        self.file['analiz'] = [self.ok, self.dictData, self.unzip(self.dictTrust(self.ok, self.dictData, self.head))]
+        self.file['analiz'] = [self.ok, self.dictData, self.unzip(
+            self.dictTrust(self.ok, self.dictData, self.head))]
         self.output = OutputWind(self, self.file)
         self.output.move(self.x(), self.y())
         self.output.show()
 
     def keyPressEvent(self, e):
         flag = False
-        if e.key() == QtCore.Qt.Key_Y:
+        if e.key() == QtCore.Qt.Key_Y or e.text() == 'н':
             self.ans = False  # Некие действия после нажатия клавиши
             flag = True
-        elif e.key() == QtCore.Qt.Key_L:
+        elif e.key() == QtCore.Qt.Key_L or e.text() == 'д':
             self.ans = True
             flag = True
         if flag:
             try:
                 next(self._generator)  # Продвижение на следующую итерацию
             except StopIteration:
-                self.stop()  # Циклы закончились, завершение заданий на этом виджете
+                self.stop()  # Завершение заданий на этом виджете
 
     def fBack(self):
         self.parent.show()
@@ -319,6 +395,9 @@ class AnalizWind(QtGui.QWidget):
 
 
 class OutputWind(QtGui.QWidget):
+    '''
+    Диалог определения отношения признаков классификации.
+    '''
     def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'output.ui'), self)
@@ -330,40 +409,62 @@ class OutputWind(QtGui.QWidget):
         self.ln = len(self.head)
         for i in self.head:
             self.listWidget.addItem(i)
-        self.connect(self.butUp, QtCore.SIGNAL("clicked()"), self.fUp)
-        self.connect(self.butDown, QtCore.SIGNAL("clicked()"), self.fDown)
+        self.butUp.clicked.connect(self.fUp)
+        self.butDown.clicked.connect(self.fDown)
         self.butPrint.clicked.connect(self.printData)
         self.butBack.clicked.connect(self.fBack)
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Up",
+                                     triggered=self.fUp))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Down",
+                                     triggered=self.fDown))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Space",
+                                     triggered=self.printData))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Right",
+                                     triggered=self.printData))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Left",
+                                     triggered=self.fBack))
+        self.addAction(QtGui.QAction(self, shortcut="Alt+Backspace",
+                                     triggered=self.fBack))
         self.listWidget.setItemSelected(self.listWidget.item(0), True)
 
+    # Смена местами элементов списка.
     def change(self, n, k):
         self.listWidget.setItemSelected(self.listWidget.item(n), False)
         self.listWidget.insertItem(n, self.listWidget.takeItem(k))
         self.listWidget.setItemSelected(self.listWidget.item(k), True)
 
+    # Сдвиг элемента вверх.
     def fUp(self):
         n = self.listWidget.currentRow()
         if not n == 0:
             self.change(n, n - 1)
 
+    # Сдвиг элемента вниз.
     def fDown(self):
         n = self.listWidget.currentRow()
         if not n == self.ln:
             self.change(n, n + 1)
 
+    # Генератор элементов списка.
     def getItems(self):
         for i in range(self.listWidget.count()):
             yield self.listWidget.item(i)
 
+    # Отображение окна вывода данных.
     def printData(self):
         self.newHead = []
         for i in self.getItems():
             self.newHead.append(i.text())
+        # Попытка вызова созданного окна данных.
         try:
-            self.finish.print(self.data, self.dictData, self.head, self.newHead)
+            self.finish.print(self.data, self.dictData,
+                              self.head, self.newHead)
             self.finish.show()
+        # При отсутствии объекта класса PrintWind необходимо его создать,
+        # затем вывести данные на экран.
         except:
-            self.finish = PrintWind(self.data, self.dictData, self.head, self.newHead)
+            self.finish = PrintWind(self.data, self.dictData,
+                                    self.head, self.newHead)
             self.finish.show()
 
     def fBack(self):
@@ -372,19 +473,27 @@ class OutputWind(QtGui.QWidget):
 
 
 class PrintWind(QtGui.QWidget):
-#   data - всевозможные сочетания всех элементов значений признаков классификаций
-#   dictData - словарь соответствия элементов data и head
-#   head - список признаков классификаций
+    '''
+    Окно отображения итоговых данных.
+    data = file['analiz'][0]
+    dictData = file['analiz'][1]
+    head = file['analiz'][2]
+    newHead = новый порядок признаков классификаций.
+    '''
     def __init__(self, data, dictData, head, newHead):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'print.ui'), self)
         self.print(data, dictData, head, newHead)
 
     def print(self, data, dictData, head, newHead):
-        self.textBrowser.setPlainText(prepareToTextBrowser(data, dictData, head, newHead))
+        self.textBrowser.setPlainText(
+            prepareToTextBrowser(data, dictData, head, newHead))
 
 
 class DeleteWind(QtGui.QWidget):
+    '''
+    Диалог удаления данных.
+    '''
     def __init__(self, parent, file):
         QtGui.QWidget.__init__(self)
         uic.loadUi(join('ui', 'delete.ui'), self)
@@ -393,6 +502,12 @@ class DeleteWind(QtGui.QWidget):
         self.butData.clicked.connect(self.fData)
         self.butAnaliz.clicked.connect(self.fAnaliz)
         self.butClose.clicked.connect(self.fClose)
+        self.addAction(QtGui.QAction(self, shortcut=str(1),
+                                     triggered=self.fData))
+        self.addAction(QtGui.QAction(self, shortcut=str(2),
+                                     triggered=self.fAnaliz))
+        self.addAction(QtGui.QAction(self, shortcut=str(3),
+                                     triggered=self.fClose))
         self.butData.setEnabled(True)
         self.butAnaliz.setEnabled(False)
         try:
@@ -401,10 +516,16 @@ class DeleteWind(QtGui.QWidget):
         except:
             pass
 
+    # Удаление всех данных их файла.
     def fData(self):
         del self.file['input']
+        try:
+            del self.file['analiz']
+        except:
+            pass
         self.fClose()
 
+    # Удаление данных об анализе.
     def fAnaliz(self):
         del self.file['analiz']
         self.butAnaliz.setEnabled(False)
