@@ -37,6 +37,9 @@
      <height>101</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Alt + Up&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <property name="styleSheet">
     <string notr="true"/>
    </property>
@@ -52,6 +55,9 @@
      <width>51</width>
      <height>101</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Alt + Down&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -82,6 +88,9 @@
      <height>41</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Alt + Right&lt;/p&gt;&lt;p&gt;Alt + Space&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <property name="text">
     <string>Print</string>
    </property>
@@ -90,10 +99,13 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>430</y>
+     <y>420</y>
      <width>99</width>
-     <height>23</height>
+     <height>41</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Alt + Left&lt;/p&gt;&lt;p&gt;Alt + Backspace&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="text">
     <string>Назад</string>
